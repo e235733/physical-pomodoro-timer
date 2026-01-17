@@ -4,11 +4,11 @@
 SevSeg sevseg;
 
 const int PIN_BTN_START = 2;
-const int PTN_BTN_RESET = 3;
+const int PIN_BTN_RESET = 3;
 
 bool lastStartBtnState = LOW;
+bool lastResetBtnState = LOW;
 
-int count = 0;
 // timer value
 float timerMillis = 0;
 // start or restart time
@@ -29,7 +29,7 @@ void setup() {
 
   // button settings
   pinMode(PIN_BTN_START, INPUT_PULLUP);
-  pinMode(PIN_BTN_START, INPUT_PULLUP);
+  pinMode(PIN_BTN_RESET, INPUT_PULLUP);
 
   // display settings
   byte numDigits = 4;
@@ -53,6 +53,28 @@ void loop() {
   }
 
   // display
-  sevseg.setNumber(count);
+  sevseg.setNumber(0000);
   sevseg.refreshDisplay();
+}
+
+bool isStartButtonPressed() {
+  bool isPressed = false;
+  // checking start button
+  if (digitalRead(PIN_BTN_START) == LOW && lastStartBtnState == HIGH) {
+    isPressed = true;
+  }
+  lastStartBtnState = digitalRead(PIN_BTN_START);
+
+  return isPressed;
+}
+
+bool isRestartButtonPressed() {
+  bool isPressed = false;
+  // checking reset button
+  if (digitalRead(PIN_BTN_RESET) == LOW && lastResetBtnState == HIGH) {
+    isPressed = true;
+  }
+  lastResetBtnState = digitalRead(PIN_BTN_RESET);
+
+  return isPressed;
 }
