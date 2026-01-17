@@ -9,7 +9,19 @@ const int PTN_BTN_RESET = 3;
 bool lastStartBtnState = LOW;
 
 int count = 0;
+// timer value
+float timerMillis = 0;
+// start or restart time
+unsigned startMillis;
 
+// state machine
+enum StateMachine {
+  IDLE,
+  STUDY,
+  BREAK,
+  PAUSE
+};
+StateMachine state;
 
 void setup() {
   // start serial communication
@@ -25,16 +37,22 @@ void setup() {
   byte segmentPins[] = {30, 31, 32, 33, 34, 35, 36, 37};
   sevseg.begin(COMMON_CATHODE, numDigits, digitPins, segmentPins, false, false, false, false);
   sevseg.setBrightness(90);
+
+  // set the initial state to IDLE
+  state = IDLE;
+
+  // set 25 min timer
+  timerMillis = 25 * 60 * 1000;
 }
 
 void loop() {
+
+  switch (state) {
+    case IDLE:
+      
+  }
+
   // display
   sevseg.setNumber(count);
   sevseg.refreshDisplay();
-
-  // checking start button
-  if (digitalRead(PIN_BTN_START) == LOW && lastStartBtnState == HIGH) {
-    count++;
-  }
-  lastStartBtnState = digitalRead(PIN_BTN_START);
 }
