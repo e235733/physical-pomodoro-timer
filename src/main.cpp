@@ -9,10 +9,13 @@ const int PIN_BTN_RESET = 3;
 bool lastStartBtnState = LOW;
 bool lastResetBtnState = LOW;
 
+unsigned long studyMillis = 15000;
+unsigned long breakMillis = 3000; 
+
 // timer value
-float timerMillis = 0;
+long timerMillis;
 // start or restart time
-unsigned startMillis;
+unsigned long startMillis;
 
 // state machine
 enum StateMachine {
@@ -22,6 +25,12 @@ enum StateMachine {
   PAUSE
 };
 StateMachine state;
+
+// previous state
+StateMachine prevState;
+
+bool isStartButtonPressed();
+bool isResetButtonPressed();
 
 void setup() {
   // start serial communication
@@ -42,18 +51,72 @@ void setup() {
   state = IDLE;
 
   // set 25 min timer
-  timerMillis = 25 * 60 * 1000;
+  timerMillis = studyMillis;
 }
 
 void loop() {
 
   switch (state) {
     case IDLE:
-      
+      if (isStartButtonPressed()) {
+        // start timer
+        state = STUDY;
+        startMillis = millis();
+      }
+      break;
+    case STUDY:
+      timerMillis = studyMillis - millis() + startMillis;
+      // when timer runs out
+      if (timerMillis <= 0) {
+        state = BREAK;
+        startMillis = millis();
+      }
+      if (isStartButtonPressed()) {
+        // pause timer
+        state = PAUSE;
+        prevState = STUDY;
+      }
+      break;
+    case BREAK:
+      timerMillis = breakMillis - millis() + startMillis;
+      // when timer runs out
+      if (timerMillis <= 0) {
+        state = STUDY;
+        startMillis = millis();
+      }
+      if (isStartButtonPressed()) {
+        // pause timer
+        state = PAUSE;
+        prevState = BREAK;
+      }
+      break;
+    case PAUSE:
+      if (isStartButtonPressed()) {
+        // restart timer
+        if (prevState == STUDY) {
+          state = STUDY;
+          startMillis = millis() - studyMillis + timerMillis;
+        }
+        else {
+          state = BREAK;
+          startMillis = millis() - breakMillis + timerMillis;
+        }
+      }
+      if (isResetButtonPressed()) {
+        // reset timer
+        state = IDLE;
+        timerMillis = studyMillis;
+      }
+      break;
   }
 
+  // keep minute under 100
+  int minute = timerMillis / 1000 / 60 % 100;
+  int second = timerMillis / 1000 % 60;
+  int displayValue = minute * 100 + second;
+
   // display
-  sevseg.setNumber(0000);
+  sevseg.setNumber(displayValue, 2);
   sevseg.refreshDisplay();
 }
 
@@ -68,7 +131,7 @@ bool isStartButtonPressed() {
   return isPressed;
 }
 
-bool isRestartButtonPressed() {
+bool isResetButtonPressed() {
   bool isPressed = false;
   // checking reset button
   if (digitalRead(PIN_BTN_RESET) == LOW && lastResetBtnState == HIGH) {
