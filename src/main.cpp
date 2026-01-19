@@ -3,14 +3,17 @@
 
 SevSeg sevseg;
 
+// button pin
 const int PIN_BTN_START = 2;
 const int PIN_BTN_RESET = 3;
+// buzzer pin
+const int PIN_BUZZER = 8;
 
 bool lastStartBtnState = LOW;
 bool lastResetBtnState = LOW;
 
-unsigned long studyMillis = 15000;
-unsigned long breakMillis = 3000; 
+unsigned long studyMillis = 1LL * 25 * 60 * 1000;
+unsigned long breakMillis = 1LL * 5 * 60 * 1000;
 
 // timer value
 long timerMillis;
@@ -32,6 +35,9 @@ StateMachine prevState;
 bool isStartButtonPressed();
 bool isResetButtonPressed();
 
+void makePressingSound();
+void makeTimeUpSound();
+
 void setup() {
   // start serial communication
   Serial.begin(9600);
@@ -39,6 +45,8 @@ void setup() {
   // button settings
   pinMode(PIN_BTN_START, INPUT_PULLUP);
   pinMode(PIN_BTN_RESET, INPUT_PULLUP);
+  // buzzer setting
+  pinMode(PIN_BUZZER, OUTPUT);
 
   // display settings
   byte numDigits = 4;
@@ -59,6 +67,7 @@ void loop() {
   switch (state) {
     case IDLE:
       if (isStartButtonPressed()) {
+        makePressingSound();
         // start timer
         state = STUDY;
         startMillis = millis();
@@ -68,10 +77,12 @@ void loop() {
       timerMillis = studyMillis - millis() + startMillis;
       // when timer runs out
       if (timerMillis <= 0) {
+        makeTimeUpSound();
         state = BREAK;
         startMillis = millis();
       }
       if (isStartButtonPressed()) {
+        makePressingSound();
         // pause timer
         state = PAUSE;
         prevState = STUDY;
@@ -81,10 +92,12 @@ void loop() {
       timerMillis = breakMillis - millis() + startMillis;
       // when timer runs out
       if (timerMillis <= 0) {
+        makeTimeUpSound();
         state = STUDY;
         startMillis = millis();
       }
       if (isStartButtonPressed()) {
+        makePressingSound();
         // pause timer
         state = PAUSE;
         prevState = BREAK;
@@ -92,6 +105,7 @@ void loop() {
       break;
     case PAUSE:
       if (isStartButtonPressed()) {
+        makePressingSound();
         // restart timer
         if (prevState == STUDY) {
           state = STUDY;
@@ -103,6 +117,7 @@ void loop() {
         }
       }
       if (isResetButtonPressed()) {
+        makePressingSound();
         // reset timer
         state = IDLE;
         timerMillis = studyMillis;
@@ -140,4 +155,14 @@ bool isResetButtonPressed() {
   lastResetBtnState = digitalRead(PIN_BTN_RESET);
 
   return isPressed;
+}
+
+void makePressingSound() {
+  tone(PIN_BUZZER, 2000, 100);
+}
+
+void makeTimeUpSound() {
+  tone(PIN_BUZZER, 2000, 100);
+  delay(200);
+  tone(PIN_BUZZER, 2000, 100);
 }
